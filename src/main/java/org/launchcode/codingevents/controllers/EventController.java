@@ -1,6 +1,7 @@
 package org.launchcode.codingevents.controllers;
 
 import org.launchcode.codingevents.data.EventRepository;
+import org.launchcode.codingevents.models.AbstractEntity;
 import org.launchcode.codingevents.models.Event;
 import org.launchcode.codingevents.models.EventType;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,6 +11,7 @@ import org.springframework.validation.Errors;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
+import java.util.Optional;
 
 /**
  * Created by Chris Bay
@@ -31,7 +33,12 @@ public class EventController {
     @GetMapping("create")
     public String displayCreateEventForm(Model model) {
         model.addAttribute("title", "Create Event");
-        model.addAttribute(new Event());
+        model.addAttribute(new Event() {
+            @Override
+            public int getId() {
+                return super.getId();
+            }
+        });
         model.addAttribute("types", EventType.values());
         return "events/create";
     }
@@ -65,6 +72,32 @@ public class EventController {
         }
 
         return "redirect:";
+    }
+
+    @GetMapping("/edit/{eventId}")
+    public String displayEditEventForm(Model model, @PathVariable int eventId) {
+        // Don't worry about this Optional syntax until chapter 18.3
+        Optional<Event> eventWrapper = eventRepository.findById(eventId);
+        if (eventWrapper.isPresent()) {
+            Event event = eventWrapper.get();
+            model.addAttribute("event", event);
+            return "events/edit";
+        }
+        return "events/index";
+    }
+
+    @PostMapping("/edit")
+    public String processEditEventForm(int eventId, String name, String description, String contactEmail) {
+        // Don't worry about this Optional syntax until chapter 18.3
+        Optional<Event> eventWrapper = eventRepository.findById(eventId);
+        if (eventWrapper.isPresent()) {
+            Event event = eventWrapper.get();
+            event.setName(name);
+            event.setDescription(description);
+            event.setContactEmail(contactEmail);
+            eventRepository.save(event);
+        }
+        return "redirect:/events";
     }
 
 }
